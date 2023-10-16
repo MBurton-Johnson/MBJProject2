@@ -9,6 +9,7 @@ const api = express()
 
 api.use(cors())
 api.use(bodyParser.json())
+api.use(express.json());
 
 mongoose.connect(process.env.DATABASE_URL, {useNewUrlParser: true, useUnifiedTopology: true})
   .then(() => console.log('Connected to MongoDB'))
