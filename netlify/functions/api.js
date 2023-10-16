@@ -86,6 +86,12 @@ const Review = mongoose.model('Review', reviewSchema);
 
 const router = Router();
 
+api.get('/api/homepage', (req, res) => {
+    // You can put your logic for handling this GET request here.
+    // For example, you can send back a JSON response.
+    res.json({ message: 'Homepage data goes here' });
+  });
+
 router.post('/user/login', async (req, res) => {
     console.log("Received:", req.body);
     console.log('Request body:', req.body);
