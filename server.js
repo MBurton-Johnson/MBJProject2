@@ -4,11 +4,16 @@ import bodyParser from "body-parser";
 // import { Octokit } from "octokit";
 import mongoose from "mongoose";
 import 'dotenv/config';
+import serverless from "serverless-http"
+
+
 
 const app = express()
 app.use(cors())
 app.use(bodyParser.json())
 app.use(express.json());
+
+export const handler = serverless(app)
 
 // Set port to listening
 
