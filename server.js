@@ -66,6 +66,31 @@ const podcastSchema = new mongoose.Schema({
   });
   
   const Podcast = mongoose.model('Podcast', podcastSchema);
+
+//Creating a review schema
+
+const reviewSchema = new mongoose.Schema({
+  rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5
+  },
+  description: {
+      type: String,
+      required: true
+  },
+  podcastUuid: {
+      type: String,
+      required: true
+  },
+  userEmail: {
+      type: String,
+      required: true
+  }
+});
+
+const Review = mongoose.model('Review', reviewSchema);
   
 // Login request
 
@@ -165,4 +190,136 @@ app.post('/user/podcasts', async (req, res) => {
     }
   });
 
-  
+// Delete podcast from user library
+
+  app.delete('/user/deletePodcast', async (req, res) => {
+    const { userEmail, podcastUuid } = req.body;
+
+    if (!userEmail || !podcastUuid) {
+        return res.status(400).json({ message: 'User email and podcast UUID required' });
+    }
+
+    try {
+        await User.findOneAndUpdate(
+            { userEmail },
+            { $pull: { podcasts: podcastUuid } }
+        );
+        res.json({ message: 'Podcast removed from user library' });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+// Add review to podcast
+
+app.post('/review/add', async (req, res) => {
+  console.log('Received Review Data:', req.body);
+  const { rating, description, podcastUuid, userEmail } = req.body;
+
+  // Ensure all data is present
+  if (!rating || !description || !podcastUuid || !userEmail) {
+      return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  try {
+      // Ensure rating is a number between 1 and 5
+      const numericRating = Number(rating);
+      if (isNaN(numericRating) || numericRating < 1 || numericRating > 5) {
+          return res.status(400).json({ message: 'Invalid rating' });
+      }
+
+      // Create the new review
+      const newReview = new Review({
+          rating: numericRating,
+          description,
+          podcastUuid,
+          userEmail
+      });
+      await newReview.save();
+
+      // Send back a successful response
+      res.json({ message: 'Review added successfully', data: newReview });
+  } catch (error) {
+      // Log the error and send back a server error response
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+// Get podcast data from MongoDB
+app.get('/podcasts/:uuid', async (req, res) => {
+  try {
+      const podcast = await Podcast.findOne({ uuid: req.params.uuid });
+      if (!podcast) {
+          return res.status(404).json({ message: 'Podcast not found' });
+      }
+      res.json(podcast);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// Get user reviews for a specific podcast
+app.post('/review/user', async (req, res) => {
+  try {
+      const { podcastUuid, userEmail } = req.body;
+
+      // Validations...
+
+      const review = await Review.findOne({ podcastUuid, userEmail });
+      if (!review) {
+          return res.status(404).json({ message: 'Review not found' });
+      }
+      res.json(review);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// Delete a review
+
+app.delete('/review/delete', async (req, res) => {
+  try {
+    const { userEmail, podcastUuid } = req.body;
+
+    // Validate input...
+    if (!userEmail || !podcastUuid) {
+      return res.status(400).json({ message: 'User email and podcast UUID required' });
+    }
+
+    // Delete the review
+    const result = await Review.deleteOne({ userEmail, podcastUuid });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+    
+    res.json({ message: 'Review deleted successfully' });
+
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// Edit reviews
+
+// app.put('/review/update', async (req, res) => {
+//   const { userEmail, podcastUuid, rating, description } = req.body;
+
+//   try {
+//       await Review.findOneAndUpdate(
+//           { userEmail, podcastUuid },
+//           { rating, description }
+//       );
+//       res.json({ message: 'Review updated successfully' });
+//   } catch (error) {
+//       console.error('Error:', error);
+//       res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// });
+
+
