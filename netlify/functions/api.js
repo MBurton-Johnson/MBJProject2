@@ -1,9 +1,9 @@
-import express, {router} from "express";
-import cors from "cors";
-import bodyParser from "body-parser";
-import mongoose from "mongoose";
-import 'dotenv/config';
-import serverless from "serverless-http";
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const serverless = require('serverless-http');
 
 const api = express()
 
