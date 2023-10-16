@@ -1,30 +1,15 @@
-import express from "express";
+import express, {router} from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import 'dotenv/config';
-// import serverless from "serverless-http"
+import serverless from "serverless-http";
 
+const api = express()
 
+api.use(cors())
+api.use(bodyParser.json())
 
-const app = express()
-
-app.use(cors())
-app.use(bodyParser.json())
-app.use(express.json());
-
-// export const handler = serverless(app)
-
-// Set port to listening
-
-const port = process.env.PORT || 4000
-
-app.listen(port, () => {
-    console.log(`listening on port: ${port}`);
-})
-
-
-// Connecting to MongoDB
 mongoose.connect(process.env.DATABASE_URL, {useNewUrlParser: true, useUnifiedTopology: true})
   .then(() => console.log('Connected to MongoDB'))
   .catch((error) => console.error('Could not connect to MongoDB', error));
@@ -96,10 +81,11 @@ const reviewSchema = new mongoose.Schema({
 });
 
 const Review = mongoose.model('Review', reviewSchema);
-  
-// Login request
 
-app.post('/user/login', async (req, res) => {
+
+const router = Router();
+
+router.post('/user/login', async (req, res) => {
     console.log("Received:", req.body);
     console.log('Request body:', req.body);
     
@@ -126,7 +112,7 @@ app.post('/user/login', async (req, res) => {
 
   // Add podcast to a user's database / model
   
-  app.post('/user/addPodcast', async (req, res) => {
+  router.post('/user/addPodcast', async (req, res) => {
     console.log('Add Podcast to user model 2');
     
     const { userEmail, podcastUuid } = req.body;
@@ -151,7 +137,7 @@ app.post('/user/login', async (req, res) => {
 });
 
 // Add new podcast data to MongoDB
-app.post('/podcast/add', async (req, res) => {
+router.post('/podcast/add', async (req, res) => {
     console.log('Add Podcast to DB');
     const { uuid, name, description, imageUrl } = req.body;
     
@@ -172,7 +158,7 @@ app.post('/podcast/add', async (req, res) => {
 
 // Post User podcast data to their user page
 
-app.post('/user/podcasts', async (req, res) => {
+router.post('/user/podcasts', async (req, res) => {
     try {
       const { userEmail } = req.body;
       const user = await User.findOne({ userEmail });
@@ -197,7 +183,7 @@ app.post('/user/podcasts', async (req, res) => {
 
 // Delete podcast from user library
 
-  app.delete('/user/deletePodcast', async (req, res) => {
+router.delete('/user/deletePodcast', async (req, res) => {
     const { userEmail, podcastUuid } = req.body;
 
     if (!userEmail || !podcastUuid) {
@@ -218,7 +204,7 @@ app.post('/user/podcasts', async (req, res) => {
 
 // Add review to podcast
 
-app.post('/review/add', async (req, res) => {
+router.post('/review/add', async (req, res) => {
   console.log('Received Review Data:', req.body);
   const { rating, description, podcastUuid, userEmail } = req.body;
 
@@ -254,7 +240,7 @@ app.post('/review/add', async (req, res) => {
 
 
 // Get podcast data from MongoDB
-app.get('/podcasts/:uuid', async (req, res) => {
+router.get('/podcasts/:uuid', async (req, res) => {
   try {
       const podcast = await Podcast.findOne({ uuid: req.params.uuid });
       if (!podcast) {
@@ -268,7 +254,7 @@ app.get('/podcasts/:uuid', async (req, res) => {
 });
 
 // Get user reviews for a specific podcast
-app.post('/review/user', async (req, res) => {
+router.post('/review/user', async (req, res) => {
   try {
       const { podcastUuid, userEmail } = req.body;
 
@@ -287,7 +273,7 @@ app.post('/review/user', async (req, res) => {
 
 // Delete a review
 
-app.delete('/review/delete', async (req, res) => {
+router.delete('/review/delete', async (req, res) => {
   try {
     const { userEmail, podcastUuid } = req.body;
 
@@ -310,21 +296,7 @@ app.delete('/review/delete', async (req, res) => {
   }
 });
 
-// Edit reviews
 
-// app.put('/review/update', async (req, res) => {
-//   const { userEmail, podcastUuid, rating, description } = req.body;
+api.use("/api/", router);
 
-//   try {
-//       await Review.findOneAndUpdate(
-//           { userEmail, podcastUuid },
-//           { rating, description }
-//       );
-//       res.json({ message: 'Review updated successfully' });
-//   } catch (error) {
-//       console.error('Error:', error);
-//       res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// });
-
-
+export const handler = serverless(api);
