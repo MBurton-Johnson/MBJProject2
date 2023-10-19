@@ -86,12 +86,6 @@ const Review = mongoose.model('Review', reviewSchema);
 
 const router = Router();
 
-api.get('/api/homepage', (req, res) => {
-    // You can put your logic for handling this GET request here.
-    // For example, you can send back a JSON response.
-    res.json({ message: 'Homepage data goes here' });
-  });
-
 router.post('/user/login', async (req, res) => {
     console.log("Received:", req.body);
     console.log('Request body:', req.body);
@@ -304,6 +298,30 @@ router.delete('/review/delete', async (req, res) => {
 });
 
 
-api.use("/api/", router);
+// Update Review
+router.put('/review/update', async (req, res) => {
+  try {
+    // Extract data from the request body
+    const { userEmail, podcastUuid, rating, description } = req.body;
 
-export const handler = serverless(api);
+    // Find the review in the database based on userEmail and podcastUuid
+    const existingReview = await Review.findOne({ userEmail, podcastUuid });
+
+    if (!existingReview) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    // Update the review data
+    existingReview.rating = rating;
+    existingReview.description = description;
+
+    // Save the updated review
+    await existingReview.save();
+
+    // Send a success response
+    res.json({ message: 'Review updated successfully', data: existingReview });
+  } catch (error) {
+    console.error('Error updating review:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
