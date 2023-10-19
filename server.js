@@ -310,21 +310,32 @@ app.delete('/review/delete', async (req, res) => {
   }
 });
 
-// Edit reviews
+// Update Review
+app.put('/review/update', async (req, res) => {
+  try {
+    // Extract data from the request body
+    const { userEmail, podcastUuid, rating, description } = req.body;
 
-// app.put('/review/update', async (req, res) => {
-//   const { userEmail, podcastUuid, rating, description } = req.body;
+    // Find the review in the database based on userEmail and podcastUuid
+    const existingReview = await Review.findOne({ userEmail, podcastUuid });
 
-//   try {
-//       await Review.findOneAndUpdate(
-//           { userEmail, podcastUuid },
-//           { rating, description }
-//       );
-//       res.json({ message: 'Review updated successfully' });
-//   } catch (error) {
-//       console.error('Error:', error);
-//       res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// });
+    if (!existingReview) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    // Update the review data
+    existingReview.rating = rating;
+    existingReview.description = description;
+
+    // Save the updated review
+    await existingReview.save();
+
+    // Send a success response
+    res.json({ message: 'Review updated successfully', data: existingReview });
+  } catch (error) {
+    console.error('Error updating review:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
